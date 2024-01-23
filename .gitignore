@@ -1,0 +1,8 @@
+bin*
+__pycache__*
+*.db
+include*
+lib*
+share*
+*.cfg
+*.html

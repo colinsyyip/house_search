@@ -1,0 +1,13 @@
+{"domain": "domain",
+"url_append": "url_append",
+"listingId": "domain_id",
+"furnishingId": "additional_info",
+"availabilityStartDate": "available_date",
+"availabilityEndDate": "available_end_date",
+"street": "street",
+"city": "locale",
+"surfaceArea": "area_dwelling",
+"listingType": "room_name",
+"totalRentalPrice": "rent_total",
+"utilitiesIncluded": "additional_csts",
+"isNewAdvert": "publish_date"}
