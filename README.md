@@ -29,7 +29,7 @@ Funda/Pararius require a proxy list, otherwise requests will fail. Published cod
 
 From here you can access `listings.db` using `sqlite` as needed. Short examples provided in `db_retrieval.ipynb`.
 
-### License
+## License
 
 MIT License 
 
