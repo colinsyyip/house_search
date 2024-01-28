@@ -4,14 +4,19 @@ import sys
 import warnings
 from utils import push_to_db
 
+
 def execute_pullers(run_headless: bool = True):
     """
     Initialize and execute pullers to retrieve data
     """
     room_obj = Room()
+    print("Room init. complete")
     kamer_obj = Kamernet()
-    pararius_obj = Pararius(headless = run_headless)
-    funda_obj = Funda(headless = run_headless)
+    print("Kamernet init. complete")
+    pararius_obj = Pararius(headless=run_headless)
+    print("Pararius init. complete")
+    funda_obj = Funda(headless=run_headless)
+    print("Funda init. complete")
 
     obj_list = [room_obj, kamer_obj, pararius_obj, funda_obj]
     pulled_results = [x.parse_rentals() for x in obj_list]
@@ -28,14 +33,16 @@ if __name__ == "__main__":
         is_headless_str = "F"
     else:
         is_headless_str = sys.argv[1]
-    
+
     if is_headless_str == "T":
         is_headless = True
     elif is_headless_str == "F":
         is_headless = False
     else:
-        warnings.warn("Unaccepted parameter for headless passed. Defaulting to non-headless.")
+        warnings.warn(
+            "Unaccepted parameter for headless passed. Defaulting to non-headless."
+        )
         is_headless = False
 
-    results = execute_pullers(run_headless = is_headless)
+    results = execute_pullers(run_headless=is_headless)
     push_to_db(results)

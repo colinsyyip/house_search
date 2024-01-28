@@ -6,3 +6,6 @@ lib*
 share*
 *.cfg
 *.html
+selenium*
+__local*
+proxy_list.txt

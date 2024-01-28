@@ -11,7 +11,7 @@ class Base(DeclarativeBase):
 class Listing(Base):
     __tablename__ = "listings"
 
-    url_append: Mapped[str] = mapped_column(primary_key = True)
+    url_append: Mapped[str] = mapped_column(primary_key=True)
     domain: Mapped[str]
     domain_id: Mapped[str]
     postal_code: Mapped[Optional[str]]
