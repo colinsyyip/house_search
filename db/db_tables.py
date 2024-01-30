@@ -12,6 +12,7 @@ class Listing(Base):
     __tablename__ = "listings"
 
     url_append: Mapped[str] = mapped_column(primary_key=True)
+    upload_date: Mapped[str]
     domain: Mapped[str]
     domain_id: Mapped[str]
     postal_code: Mapped[Optional[str]]
@@ -51,3 +52,13 @@ class Listing(Base):
             postal_code={self.postal_code!r})
         """
         return fmt_str
+
+
+class Message(Base):
+    __tablename__ = "message"
+
+    sent_url_append: Mapped[str] = mapped_column(primary_key=True)
+    sender: Mapped[str]
+    recipient: Mapped[str]
+    send_date: Mapped[str]
+    sent_data_upload_date: Mapped[str]

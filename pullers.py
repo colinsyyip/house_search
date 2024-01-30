@@ -1,6 +1,5 @@
 # Instantiatable classes for specific rental sites. Classes hold raw data but return formatted data
 
-from bs4 import BeautifulSoup
 from copy import deepcopy
 from datetime import datetime, timedelta
 import json
@@ -8,11 +7,8 @@ from math import ceil
 import puller_configs
 import random
 import re
-from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.select import Select
-from selenium.webdriver.support.ui import WebDriverWait
 from time import sleep
 import utils
 
@@ -362,7 +358,7 @@ class Pararius:
         Get DOM of and parse relevant data for a single listing URL
         """
         listing_full_url = self.site_domain + listing_link
-        print(listing_full_url)
+        print("Parsing %s" % listing_full_url)
         listing_soup = self.driver.selenium_soup_get(
             listing_full_url,
             test_element_class="listing-detail-summary__title",
@@ -589,24 +585,16 @@ class Funda:
         Get DOM of and parse relevant data for a single listing URL
         """
         # Insert en for english results
+        print("Parsing %s" % listing_link)
         en_swapped_listing_link = listing_link.replace(
             "https://www.funda.nl/", "https://www.funda.nl/en/"
         )
-        bare_driver_instance = self.driver.driver
+        # bare_driver_instance = self.driver.driver
         result_soup = self.driver.selenium_soup_get(
             en_swapped_listing_link,
             "//span[@class='object-header__title']",
             by_method=By.XPATH,
         )
-
-        # Select taal == english
-        # language_selector = Select(bare_driver_instance.find_element(By.XPATH,
-        #                                                              "//select[@id='langSwitch']"))
-        # language_selector.select_by_visible_text("English")
-
-        # Pull soup again with english text
-        sleep(1)
-        # result_soup = BeautifulSoup(bare_driver_instance.page_source)
 
         listing_dict = {}
 
@@ -636,7 +624,6 @@ class Funda:
         neighbourhood_title_span = result_soup.find_all(
             "span", "fd-text--ellipsis fd-text--nowrap fd-overflow-hidden"
         )[-1]
-        # neighbourhood_title_span = neighbourhood_obj.find("span")
         locale = neighbourhood_title_span.text.replace(" ", "")
 
         # Ownership details
@@ -649,16 +636,16 @@ class Funda:
         table_dict = dict(zip(table_headers_text, tables))
 
         # Area dwelling
-        area_objects = result_soup.find_all(
-            "span", "kenmerken-highlighted__value fd-text--nowrap"
-        )
-        if len(area_objects) == 0:
-            area_dwelling = 0
-        else:
-            sq_m_obj = area_objects[0]
-            area_dwelling = int(sq_m_obj.text.replace(" m²", ""))
-
         if not singular_table:
+            area_objects = result_soup.find_all(
+                "span", "kenmerken-highlighted__value fd-text--nowrap"
+            )
+            if len(area_objects) == 0:
+                area_dwelling = 0
+            else:
+                sq_m_obj = area_objects[0]
+                area_dwelling = int(sq_m_obj.text.replace(" m²", ""))
+
             try:
                 ownership_table = table_dict["Transfer of ownership"]
             except KeyError:
@@ -690,11 +677,10 @@ class Funda:
                 rent_total_str = ownership_table_dict["Rental price "]
             except KeyError:
                 rent_total_str = ownership_table_dict["Huurprijs "]
-            rent_numeric_match = re.search("(\d+\,|)\d{3}", rent_total_str).group()
-            rent_total = int(rent_numeric_match.replace(",", ""))
+            rent_numeric_match = re.search("(\d+\.||\.)*\d{3}", rent_total_str).group()
+            rent_total = int(re.sub("\,|\.", "", rent_numeric_match))
 
         else:
-
             feature_table = tables[0]
             rent_buy = "Rent"
             available_date = datetime.now()
@@ -705,13 +691,19 @@ class Funda:
                 x.text for x in feature_table.find_all("dd") if x.find("dd") is None
             ]
             feature_table_dict = dict(zip(feature_table_keys, feature_table_values))
+            
+            try:
+                area_dwelling_str = feature_table_dict["Area"]
+            except KeyError:
+                area_dwelling_str = feature_table_dict["Oppervlakte"]
+            area_dwelling = int(area_dwelling_str.split(" ")[0])
 
             try:
                 rent_total_str = feature_table_dict["Rental price "]
             except KeyError:
                 rent_total_str = feature_table_dict["Huurprijs "]
-            rent_numeric_match = re.search("(\d+\,|)\d{3}", rent_total_str).group()
-            rent_total = int(rent_numeric_match.replace(",", ""))
+            rent_numeric_match = re.search("(\d+\.||\.)*\d{3}", rent_total_str).group()
+            rent_total = int(re.sub("\,|\.", "", rent_numeric_match))
 
         listing_dict["url_append"] = url_append
         listing_dict["domain"] = self.site_domain

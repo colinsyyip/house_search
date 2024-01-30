@@ -1,3 +1,5 @@
+from datetime import datetime
+from db import db_init
 from itertools import chain
 from pullers import Funda, Kamernet, Pararius, Room
 import sys
@@ -44,5 +46,9 @@ if __name__ == "__main__":
         )
         is_headless = False
 
+    db_init.validate_database()
     results = execute_pullers(run_headless=is_headless)
+    curr_datetime = datetime.now()
+    truncated_datetime = curr_datetime.replace(second=0, microsecond=0)
+    [x.update({'upload_date': truncated_datetime}) for x in results]
     push_to_db(results)
