@@ -5,6 +5,7 @@ from pullers import Funda, Kamernet, Pararius, Room
 import sys
 import warnings
 from utils import push_to_db
+from mail_generate import MailGenerator
 
 
 def execute_pullers(run_headless: bool = True):
@@ -29,7 +30,7 @@ def execute_pullers(run_headless: bool = True):
 
 if __name__ == "__main__":
     """
-    Executes all pullers as well as push to DB. Can run headless with argument T or F
+    Executes all pullers as well as push to DB. Can run headless with argument T or F.
     """
     if len(sys.argv) == 1:
         is_headless_str = "F"
@@ -50,5 +51,9 @@ if __name__ == "__main__":
     results = execute_pullers(run_headless=is_headless)
     curr_datetime = datetime.now()
     truncated_datetime = curr_datetime.replace(second=0, microsecond=0)
-    [x.update({'upload_date': truncated_datetime}) for x in results]
+    [x.update({"upload_date": truncated_datetime}) for x in results]
     push_to_db(results)
+
+    mail_gen = MailGenerator()
+    if mail_gen.new_listings is not None:
+        mail_gen.execute_mail()

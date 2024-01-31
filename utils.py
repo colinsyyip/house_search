@@ -28,20 +28,26 @@ def filter_comp(var, val, comp):
     return False
 
 
-def push_to_db(data, db_url="sqlite:///db/listings.db"):
+def push_to_db(
+    data,
+    push_data_pk: str = "url_append",
+    table=Listing,
+    table_pk=Listing.url_append,
+    db_url="sqlite:///db/listings.db",
+):
     engine = create_engine(db_url)
     with engine.connect() as conn:
         for data_dict in data:
-            data_pk = data_dict["url_append"]
-            query_stmt = select(Listing).where(Listing.url_append == data_pk)
+            data_pk = data_dict[push_data_pk]
+            query_stmt = select(table).where(table_pk == data_pk)
             query_result = conn.execute(query_stmt)
             is_exists = query_result.first()
             if not is_exists:
-                insert_statement = insert(Listing)
+                insert_statement = insert(table)
                 conn.execute(insert_statement, data_dict)
                 conn.commit()
             else:
-                update_statement = update(Listing).where(Listing.url_append == data_pk)
+                update_statement = update(table).where(table_pk == data_pk)
                 conn.execute(update_statement, data_dict)
         conn.close()
     return None
