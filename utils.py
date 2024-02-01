@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 from db.db_tables import Listing
 from fake_useragent import UserAgent
+import logging
 from multiprocessing import Process, Queue
 import random
 import requests
@@ -11,6 +12,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support.ui import WebDriverWait
 from sqlalchemy import create_engine, insert, select, update
+
+
+logger = logging.getLogger(__name__)
 
 
 def filter_comp(var, val, comp):
@@ -129,10 +133,10 @@ class Driver:
         driver.set_window_position(driver_window_pos_x, driver_window_pos_y)
         if thread_sniff:
             self.thread_queue.put(proxy_ip)
-            print("Driver succesfully verified proxy. Quitting this instance.")
+            logger.info("Driver succesfully verified proxy. Quitting this instance.")
             driver.quit()
         else:
-            print("Driver succesfully created at %s" % proxy_ip)
+            logger.info("Driver succesfully created at %s" % proxy_ip)
             return driver
 
     def driver_init(
@@ -192,7 +196,6 @@ class Driver:
         return opts
 
     def proxy_get(self, sequential_pick: bool = False):
-        # Switch from pop to just select and cycle through
         if sequential_pick:
             proxy_idx = self.proxy_idx
             self.proxy_idx += 1
@@ -219,7 +222,7 @@ class Driver:
             _ = WebDriverWait(self.driver, load_delay).until(test_element)
         except TimeoutException:
             self.driver.quit()
-            print("Restarting driver")
+            logger.info("Restarting driver")
             self.driver_init(**self.driver_params)
             self.driver.get(url)
             test_element = EC.presence_of_element_located(

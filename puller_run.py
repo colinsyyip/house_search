@@ -1,6 +1,8 @@
 from datetime import datetime
 from db import db_init
 from itertools import chain
+import logging
+from logging import StreamHandler
 from pullers import Funda, Kamernet, Pararius, Room
 import sys
 import warnings
@@ -8,23 +10,26 @@ from utils import push_to_db
 from mail_generate import MailGenerator
 
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(asctime)s] %(name)s|%(funcName)s:%(lineno)d: %(message)s",
+)
+logging.getLogger(__name__).setLevel(logging.INFO)
+logging.getLogger(__name__).addHandler(StreamHandler())
+
+
 def execute_pullers(run_headless: bool = True):
     """
     Initialize and execute pullers to retrieve data
     """
     room_obj = Room()
-    print("Room init. complete")
     kamer_obj = Kamernet()
-    print("Kamernet init. complete")
     pararius_obj = Pararius(headless=run_headless)
-    print("Pararius init. complete")
     funda_obj = Funda(headless=run_headless)
-    print("Funda init. complete")
 
     obj_list = [room_obj, kamer_obj, pararius_obj, funda_obj]
     pulled_results = [x.parse_rentals() for x in obj_list]
     flattened_results = list(chain(*pulled_results))
-
     return flattened_results
 
 

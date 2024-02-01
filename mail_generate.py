@@ -1,11 +1,15 @@
 from datetime import datetime
 from db.db_tables import Message
 import jinja2
+import logging
 from mail.email_utils import EmailSender
 import os
 import pandas as pd
 import sqlite3
 from utils import push_to_db
+
+
+logger = logging.getLogger(__name__)
 
 
 class MailGenerator:
@@ -197,7 +201,7 @@ class MailGenerator:
             message=rendered_template, recipients=recipient_list, mail_title=title_str
         )
 
-        print("Emails sent succesfully.")
+        logger.info("Emails sent succesfully.")
 
         self.push_logs_to_db(recipient_list, self.send_date_raw)
 

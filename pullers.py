@@ -3,6 +3,7 @@
 from copy import deepcopy
 from datetime import datetime, timedelta
 import json
+import logging
 from math import ceil
 import puller_configs
 import random
@@ -11,6 +12,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from time import sleep
 import utils
+
+
+logger = logging.getLogger(__name__)
 
 
 class Room:
@@ -32,6 +36,7 @@ class Room:
         self.rentals = self.get_total_results(result_search_url=search_url)
         mapping_f = open(puller_configs.ROOM_DB_KEY_MAP_PATH)
         self.db_mapping_dict = json.load(mapping_f)
+        logger.info("Room init. complete")
 
     def get_total_results_count(self, total_result_domain: str):
         """
@@ -116,7 +121,7 @@ class Room:
         Shorten extracted rentals into DB friendly format and prepare for upload to DB
         """
 
-        print("Starting Room parse")
+        logger.info("Starting Room parse")
 
         shortened_results = []
         for rental_obj in self.rentals:
@@ -154,7 +159,7 @@ class Room:
             }
             shortened_results.append(renamed_info_dict)
 
-        print("Finished Room parse")
+        logger.info("Finished Room parse")
 
         return shortened_results
 
@@ -177,6 +182,7 @@ class Kamernet:
         )
         mapping_f = open(puller_configs.KAMERNET_DB_KEY_MAP_PATH)
         self.db_mapping_dict = json.load(mapping_f)
+        logger.info("Kamernet init. complete")
 
     def get_total_results_count(
         self, total_result_domain: str, total_result_payload: dict
@@ -263,7 +269,7 @@ class Kamernet:
         """
         Parse all rental objects and remap keys for DB upsert
         """
-        print("Starting Kamernet parse")
+        logger.info("Starting Kamernet parse")
         full_parsed_rental_objs = [
             self.parse_rental_obj(x, puller_configs.KAMERNET_L1_KEYS)
             for x in self.rentals
@@ -273,7 +279,7 @@ class Kamernet:
             for x in full_parsed_rental_objs
         ]
 
-        print("Finished Kamernet parse")
+        logger.info("Finished Kamernet parse")
 
         return key_remapped_objs
 
@@ -302,6 +308,7 @@ class Pararius:
             init_search_soup, puller_configs.PARARIUS_SEARCH_URL
         )
         self.all_listing_links_unique = list(set(all_listing_links))
+        logger.info("Pararius init. complete")
 
     def get_total_results_count(self, soup):
         """
@@ -358,7 +365,7 @@ class Pararius:
         Get DOM of and parse relevant data for a single listing URL
         """
         listing_full_url = self.site_domain + listing_link
-        print("Parsing %s" % listing_full_url)
+        logger.info("Parsing %s" % listing_full_url)
         listing_soup = self.driver.selenium_soup_get(
             listing_full_url,
             test_element_class="listing-detail-summary__title",
@@ -423,9 +430,12 @@ class Pararius:
         furnished_idx = 4
 
         price_value = transfer_lineitem_raw_texts[price_idx]
-        price_re_find = re.findall("\d*", price_value)
-        price_num = int("".join([x for x in price_re_find if x != ""]))
-        listing_dict["rent_total"] = price_num
+        if "Price on request" in price_value:
+            listing_dict["rent_total"] = -1
+        else:
+            price_re_find = re.findall("\d*", price_value)
+            price_num = int("".join([x for x in price_re_find if x != ""]))
+            listing_dict["rent_total"] = price_num
 
         posted_value = transfer_lineitem_raw_texts[posted_idx]
         if "weeks" in posted_value:
@@ -498,11 +508,11 @@ class Pararius:
         """
         Executor for parsing all listings in self.all_listing_links_unique
         """
-        print("Starting Pararius parse")
+        logger.info("Starting Pararius parse")
         all_parsed = [self.parse_rental_obj(x) for x in self.all_listing_links_unique]
         stripped_parsed_listings = [x for x in all_parsed if x is not None]
 
-        print("Finished Pararius parse")
+        logger.info("Finished Pararius parse")
 
         return stripped_parsed_listings
 
@@ -533,6 +543,7 @@ class Funda:
             init_search_soup, puller_configs.FUNDA_SEARCH_URL
         )
         self.all_listing_links_unique = list(set(all_listing_links))
+        logger.info("Funda init. complete")
 
     def get_total_results_count(self, soup):
         """
@@ -585,7 +596,7 @@ class Funda:
         Get DOM of and parse relevant data for a single listing URL
         """
         # Insert en for english results
-        print("Parsing %s" % listing_link)
+        logger.info("Parsing %s" % listing_link)
         en_swapped_listing_link = listing_link.replace(
             "https://www.funda.nl/", "https://www.funda.nl/en/"
         )
@@ -691,7 +702,7 @@ class Funda:
                 x.text for x in feature_table.find_all("dd") if x.find("dd") is None
             ]
             feature_table_dict = dict(zip(feature_table_keys, feature_table_values))
-            
+
             try:
                 area_dwelling_str = feature_table_dict["Area"]
             except KeyError:
@@ -727,7 +738,7 @@ class Funda:
         """
         Executor for parsing all listings in self.all_listing_links_unique
         """
-        print("Starting Funda parse")
+        logger.info("Starting Funda parse")
         all_parsed = [self.parse_rental_obj(x) for x in self.all_listing_links_unique]
-        print("Finished Funda parse")
+        logger.info("Finished Funda parse")
         return all_parsed
