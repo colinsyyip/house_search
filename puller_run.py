@@ -2,7 +2,6 @@ from datetime import datetime
 from db import db_init
 from itertools import chain
 import logging
-from logging import StreamHandler
 from pullers import Funda, Kamernet, Pararius, Room
 import sys
 import warnings
@@ -11,11 +10,13 @@ from mail_generate import MailGenerator
 
 
 logging.basicConfig(
+    filename="house_search_logs.txt",
+    filemode="a",
     level=logging.INFO,
     format="[%(asctime)s] %(name)s|%(funcName)s:%(lineno)d: %(message)s",
 )
-logging.getLogger(__name__).setLevel(logging.INFO)
-logging.getLogger(__name__).addHandler(StreamHandler())
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 def execute_pullers(run_headless: bool = True):
@@ -52,13 +53,21 @@ if __name__ == "__main__":
         )
         is_headless = False
 
+    logger.info("Starting DB validation.")
+
     db_init.validate_database()
+    logger.info("Running pullers.")
     results = execute_pullers(run_headless=is_headless)
     curr_datetime = datetime.now()
     truncated_datetime = curr_datetime.replace(second=0, microsecond=0)
     [x.update({"upload_date": truncated_datetime}) for x in results]
+    logger.info("Pushing results to db.")
     push_to_db(results)
 
+    logger.info("Initializing MailGenerator")
     mail_gen = MailGenerator()
     if mail_gen.new_listings is not None:
+        logger.info("Sending out mail using MailGenerator")
         mail_gen.execute_mail()
+    else:
+        logger.info("No new listings found.")

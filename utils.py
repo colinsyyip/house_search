@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-from db.db_tables import Listing
+from .db.db_tables import Listing
 from fake_useragent import UserAgent
 import logging
 from multiprocessing import Process, Queue
@@ -38,21 +38,29 @@ def push_to_db(
     table=Listing,
     table_pk=Listing.url_append,
     db_url="sqlite:///db/listings.db",
+    pass_session=None,
 ):
-    engine = create_engine(db_url)
-    with engine.connect() as conn:
-        for data_dict in data:
-            data_pk = data_dict[push_data_pk]
-            query_stmt = select(table).where(table_pk == data_pk)
-            query_result = conn.execute(query_stmt)
-            is_exists = query_result.first()
-            if not is_exists:
-                insert_statement = insert(table)
-                conn.execute(insert_statement, data_dict)
+    if pass_session is None:
+        engine = create_engine(db_url)
+        conn = engine.connect()
+    else:
+        conn = pass_session
+
+    for data_dict in data:
+        data_pk = data_dict[push_data_pk]
+        query_stmt = select(table).where(table_pk == data_pk)
+        query_result = conn.execute(query_stmt)
+        is_exists = query_result.first()
+        if not is_exists:
+            insert_statement = insert(table)
+            conn.execute(insert_statement, data_dict)
+            # Only commit with full connection, not session
+            if pass_session is None:
                 conn.commit()
-            else:
-                update_statement = update(table).where(table_pk == data_pk)
-                conn.execute(update_statement, data_dict)
+        else:
+            update_statement = update(table).where(table_pk == data_pk)
+            conn.execute(update_statement, data_dict)
+    if pass_session is None:
         conn.close()
     return None
 
@@ -144,8 +152,8 @@ class Driver:
         headless: bool = False,
         proxy_sequential_pick: bool = True,
         selenium_timeout: int = 60,
-        proxy_timeout: int = 10,
-        n_proxy_tries: int = 10,
+        proxy_timeout: int = 20,
+        n_proxy_tries: int = 25,
     ):
         self.driver = None
         if self.proxies is not None:
@@ -161,15 +169,21 @@ class Driver:
                 driver_process.start()
                 driver_process.join(proxy_timeout)
 
-                # breakpoint()
-
                 if driver_process.is_alive():
+                    logger.info(
+                        "Proxy conneciton attempt to %s failed. Retrying." % proxy_ip
+                    )
                     driver_process.terminate()
                     driver_process.join()
                     continue
 
                 succesful_proxy_ip = self.thread_queue.get()
                 break
+            else:
+                raise RuntimeError(
+                    "Could not find a valid proxy with a maximum retry n of %s"
+                    % n_proxy_tries
+                )
             self.driver = self.threaded_proxy_driver_init(
                 succesful_proxy_ip, headless, False
             )

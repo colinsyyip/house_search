@@ -688,8 +688,17 @@ class Funda:
                 rent_total_str = ownership_table_dict["Rental price "]
             except KeyError:
                 rent_total_str = ownership_table_dict["Huurprijs "]
-            rent_numeric_match = re.search("(\d+\.||\.)*\d{3}", rent_total_str).group()
-            rent_total = int(re.sub("\,|\.", "", rent_numeric_match))
+
+            if (
+                "Huurprijs op aanvraag" in rent_total_str
+                or "Rental price on request" in rent_total_str
+            ):
+                rent_total = -1
+            else:
+                rent_numeric_match = re.search(
+                    "(\d+\.||\.)*\d{3}", rent_total_str
+                ).group()
+                rent_total = int(re.sub("\,|\.", "", rent_numeric_match))
 
         else:
             feature_table = tables[0]
@@ -713,6 +722,18 @@ class Funda:
                 rent_total_str = feature_table_dict["Rental price "]
             except KeyError:
                 rent_total_str = feature_table_dict["Huurprijs "]
+
+            if (
+                "Huurprijs op aanvraag" in rent_total_str
+                or "Rental price on request" in rent_total_str
+            ):
+                rent_total = -1
+            else:
+                rent_numeric_match = re.search(
+                    "(\d+\.||\.)*\d{3}", rent_total_str
+                ).group()
+                rent_total = int(re.sub("\,|\.", "", rent_numeric_match))
+
             rent_numeric_match = re.search("(\d+\.||\.)*\d{3}", rent_total_str).group()
             rent_total = int(re.sub("\,|\.", "", rent_numeric_match))
 
