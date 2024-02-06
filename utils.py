@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-from .db.db_tables import Listing
+from db.db_tables import Listing
 from fake_useragent import UserAgent
 import logging
 from multiprocessing import Process, Queue
@@ -171,7 +171,7 @@ class Driver:
 
                 if driver_process.is_alive():
                     logger.info(
-                        "Proxy conneciton attempt to %s failed. Retrying." % proxy_ip
+                        "Proxy connection attempt to %s failed. Retrying." % proxy_ip
                     )
                     driver_process.terminate()
                     driver_process.join()

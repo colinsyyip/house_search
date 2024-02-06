@@ -11,3 +11,4 @@ proxy_list.txt
 recipients.txt
 cron*
 house_search_logs.txt
+.DS_Store
