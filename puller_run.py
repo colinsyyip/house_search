@@ -69,5 +69,6 @@ if __name__ == "__main__":
     if mail_gen.new_listings is not None:
         logger.info("Sending out mail using MailGenerator")
         mail_gen.execute_mail()
+        logger.info("Emails sent out successfully.")
     else:
         logger.info("No new listings found.")

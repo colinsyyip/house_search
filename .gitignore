@@ -12,3 +12,6 @@ recipients.txt
 cron*
 house_search_logs.txt
 .DS_Store
+*.cap
+credentials.json
+token.json
